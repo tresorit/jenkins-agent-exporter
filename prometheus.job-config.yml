@@ -1,0 +1,9 @@
+- job_name: 'jenkins-agents'
+   scrape_interval: 5m
+   scheme: https
+   basic_auth:
+     username: ${functional_username}
+     password_file: /jenkins_apitoken
+   static_configs:
+    - targets: ['${jenkins_base_url}']
+   metrics_path: 'job/${job_path}/lastSuccessfulBuild/artifact/prometheus'

@@ -1,0 +1,41 @@
+
+groups:
+  - name: ATeam owned alert rules
+    rules:
+    - alert: AgentClockDiff
+      expr: max(abs(jenkins_agent_clock_diff{node_labels=~".*ATeam.*"})) by (agent_name) > 5000
+      for: 1d
+      labels:
+        severity: agent_exporter
+      annotations:
+        summary: Agent's system time is out of sync with more than 5s compared to Jenkins master's (since 1 day continously)
+        target_name: '{{ $labels.agent_name }}'
+        value: "{{ $value }} ms"
+
+    - alert: AgentWorkspaceLowOnSpace
+      expr: min(jenkins_agent_jenkins_dir_free{node_labels=~".*ATeam.*"}) by (agent_name) < 10*1024*1024*1024
+      for: 4h
+      labels:
+        severity: agent_exporter
+      annotations:
+        summary: Agent has less than 10 GB disk space on the filesystem it's workspace resides (since 4 hours continously)
+        target_name: '{{ $labels.agent_name }}'
+        value: "{{ $value | humanize1024 }}B"
+
+    - alert: AgentMetricsNotUpdating
+      expr: time() - jenkins_agent_scrape_last_collection_time/1000 > 60*60
+      for: 5m
+      labels:
+        severity: agent_exporter
+      annotations:
+        summary: Jenkins job reporting agent metrics seems to have stopped/failing, available metrics are older than 1 hour
+        value: "{{ $value }} seconds old"
+
+    - alert: AgentOffline
+      expr: jenkins_agent_is_connected == 0 and jenkins_agent_has_offline_message{node_labels=~".*ATeam.*"} == 0
+      for: 1h
+      labels:
+        severity: agent_exporter
+      annotations:
+        summary: Jenkins agent is not connected, but it has no offline message in Jenkins
+        target_name: '{{ $labels.agent_name }}'
